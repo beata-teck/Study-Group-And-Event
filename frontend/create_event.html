@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Event - StudyFinder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .category-option {
+            flex: 1;
+            min-width: 100px;
+            position: relative;
+        }
+
+        .category-option input {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .category-option label {
+            display: block;
+            padding: 1rem;
+            text-align: center;
+            border: 2px solid var(--slate-200);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .category-option label:hover {
+            border-color: var(--slate-300);
+        }
+
+        .category-option input:checked+label {
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.05);
+        }
+
+        .category-option .emoji {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .category-option .name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--slate-700);
+        }
+
+        .upload-area {
+            border: 2px dashed var(--slate-200);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+        }
+
+        .upload-area svg {
+            width: 40px;
+            height: 40px;
+            color: var(--slate-300);
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container navbar-inner">
+            <a href="index.html" class="logo">
+                <div class="logo-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                        </path>
+                    </svg></div>
+                <span class="logo-text">StudyFinder</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Discover</a>
+                <a href="create_event.html" class="nav-link active">Create Event</a>
+                <a href="calendar.html" class="nav-link">My Calendar</a>
+            </div>
+            <div class="nav-actions">
+                <div class="nav-user" id="loggedInMenu"><span>Hello, <strong id="userName">User</strong></span><a
+                        href="#" class="nav-link" id="logoutBtn" style="color: var(--red-500);">Logout</a></div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-8" style="max-width: 640px;">
+        <a href="index.html"
+            style="display: inline-flex; align-items: center; font-size: 0.875rem; color: var(--slate-500); margin-bottom: 1rem;"><svg
+                width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                style="margin-right: 0.25rem;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>Back</a>
+
+        <div class="mb-8">
+            <h1 style="font-size: 1.875rem; font-weight: 700; color: var(--slate-900); margin-bottom: 0.5rem;">Create
+                New Event</h1>
+            <p style="color: var(--slate-500);">Submit an event. It will be reviewed by admin.</p>
+        </div>
+
+        <div class="form-card">
+            <div class="alert alert-error hidden" id="errorAlert"><svg fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg><span id="errorMessage"></span></div>
+            <div class="alert alert-success hidden" id="successAlert"><svg fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg><span>Event submitted for review!</span></div>
+
+            <form id="createForm">
+                <div class="form-group">
+                    <label class="form-label" for="title">Event Title <span class="required">*</span></label>
+                    <input type="text" id="title" class="form-input" placeholder="e.g. Data Structures Study Group"
+                        required maxlength="255">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Category <span class="required">*</span></label>
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <div class="category-option"><input type="radio" name="category" id="catStudy" value="Study"
+                                checked><label for="catStudy"><span class="emoji">📚</span><span
+                                    class="name">Study</span></label></div>
+                        <div class="category-option"><input type="radio" name="category" id="catSocial"
+                                value="Social"><label for="catSocial"><span class="emoji">🎉</span><span
+                                    class="name">Social</span></label></div>
+                        <div class="category-option"><input type="radio" name="category" id="catWorkshop"
+                                value="Workshop"><label for="catWorkshop"><span class="emoji">🔧</span><span
+                                    class="name">Workshop</span></label></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="description">Description</label>
+                    <textarea id="description" class="form-input" rows="4"
+                        placeholder="Describe your event..."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label" for="event_date">Date <span
+                                class="required">*</span></label><input type="date" id="event_date" class="form-input"
+                            required></div>
+                    <div class="form-group"><label class="form-label" for="event_time">Time</label><input type="time"
+                            id="event_time" class="form-input"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="location">Location</label>
+                    <input type="text" id="location" class="form-input" placeholder="e.g. Library Room 201"
+                        maxlength="255">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Cover Image (Optional)</label>
+                    <div class="upload-area" onclick="document.getElementById('image').click()">
+                        <input type="file" id="image" accept="image/*" style="display: none;">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                        <p id="uploadText" style="font-size: 0.875rem; color: var(--slate-500);">Click to upload</p>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg">Submit for Review</button>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom" style="border:none;margin:0;padding:0;">
+                <p>&copy; 2026 StudyFinder</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            if (!currentUser) { window.location.href = 'login.html'; return; }
+            document.getElementById('event_date').min = new Date().toISOString().split('T')[0];
+        });
+
+        document.getElementById('image').addEventListener('change', (e) => {
+            if (e.target.files[0]) document.getElementById('uploadText').textContent = e.target.files[0].name;
+        });
+
+        document.getElementById('createForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            document.getElementById('errorAlert').classList.add('hidden');
+            document.getElementById('successAlert').classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('title', document.getElementById('title').value);
+            formData.append('category', document.querySelector('input[name="category"]:checked').value);
+            formData.append('description', document.getElementById('description').value);
+            formData.append('event_date', document.getElementById('event_date').value);
+            formData.append('event_time', document.getElementById('event_time').value);
+            formData.append('location', document.getElementById('location').value);
+
+            const imageFile = document.getElementById('image').files[0];
+            if (imageFile) formData.append('image', imageFile);
+
+            try {
+                const response = await fetch(`${API_BASE}/events.php`, { method: 'POST', headers: { 'X-User-ID': currentUser.id }, body: formData });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('successAlert').classList.remove('hidden');
+                    document.getElementById('createForm').reset();
+                    document.getElementById('uploadText').textContent = 'Click to upload';
+                } else {
+                    document.getElementById('errorMessage').textContent = data.message || 'Failed';
+                    document.getElementById('errorAlert').classList.remove('hidden');
+                }
+            } catch (error) {
+                document.getElementById('errorMessage').textContent = 'Network error';
+                document.getElementById('errorAlert').classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('logoutBtn')?.addEventListener('click', (e) => { e.preventDefault(); logout(); });
+    </script>
+</body>
+
+</html>

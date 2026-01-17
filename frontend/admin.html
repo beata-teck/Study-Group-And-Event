@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - StudyFinder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .stat-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .stat-value.total {
+            color: var(--slate-900);
+        }
+
+        .stat-value.approved {
+            color: var(--green-600);
+        }
+
+        .stat-value.pending {
+            color: var(--amber-500);
+        }
+
+        .stat-value.users {
+            color: var(--blue-500);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--slate-500);
+        }
+
+        .pending-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 1.25rem;
+            border-left: 4px solid var(--amber-500);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1rem;
+        }
+
+        .pending-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--slate-900);
+            margin-bottom: 0.25rem;
+        }
+
+        .pending-meta {
+            font-size: 0.75rem;
+            color: var(--slate-400);
+            margin-bottom: 0.5rem;
+        }
+
+        .pending-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .events-table {
+            width: 100%;
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .events-table th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            background: var(--slate-50);
+        }
+
+        .events-table td {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            color: var(--slate-600);
+            border-top: 1px solid var(--slate-100);
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-badge.approved {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .status-badge.pending {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .status-badge.rejected {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container navbar-inner">
+            <a href="index.html" class="logo">
+                <div class="logo-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                        </path>
+                    </svg></div>
+                <span class="logo-text">StudyFinder</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Discover</a>
+                <a href="admin.html" class="nav-link active">Admin Panel</a>
+            </div>
+            <div class="nav-actions">
+                <div class="nav-user" id="loggedInMenu"><span>Hello, <strong id="userName">Admin</strong></span><a
+                        href="#" class="nav-link" id="logoutBtn" style="color: var(--red-500);">Logout</a></div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-8">
+        <div class="mb-8">
+            <h1 style="font-size: 1.875rem; font-weight: 700; color: var(--slate-900); margin-bottom: 0.5rem;">Admin
+                Dashboard</h1>
+            <p style="color: var(--slate-500);">Manage events and review pending submissions.</p>
+        </div>
+
+        <div class="alert alert-success hidden" id="successAlert"><svg fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg><span id="successMessage">Done!</span></div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value total" id="statTotal">0</div>
+                <div class="stat-label">Total Events</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value approved" id="statApproved">0</div>
+                <div class="stat-label">Approved</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value pending" id="statPending">0</div>
+                <div class="stat-label">Pending Review</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value users" id="statUsers">0</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+        </div>
+
+        <section class="mb-8">
+            <h2 class="section-title" style="margin-bottom: 1rem;"><span class="indicator"
+                    style="background: var(--amber-500);"></span>Pending Approvals (<span id="pendingCount">0</span>)
+            </h2>
+            <div id="pendingList">
+                <div class="empty-state" style="padding: 2rem;"><svg fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24" style="width: 48px; height: 48px; color: var(--green-500);">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h3>All caught up!</h3>
+                    <p>No pending events.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section-title" style="margin-bottom: 1rem;">All Events</h2>
+            <div style="overflow-x: auto;">
+                <table class="events-table">
+                    <thead>
+                        <tr>
+                            <th>Event</th>
+                            <th>Category</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eventsTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 2rem; color: var(--slate-400);">
+                                Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom" style="border:none;margin:0;padding:0;">
+                <p>&copy; 2026 StudyFinder</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            if (!currentUser || currentUser.role !== 'admin') { window.location.href = 'index.html'; return; }
+            loadData();
+        });
+
+        async function loadData() {
+            const pending = await fetch(`${API_BASE}/events.php?status=pending`).then(r => r.json());
+            const all = await fetch(`${API_BASE}/events.php?status=all`).then(r => r.json());
+
+            if (pending.success) {
+                document.getElementById('pendingCount').textContent = pending.data.length;
+                document.getElementById('statPending').textContent = pending.data.length;
+                renderPending(pending.data);
+            }
+            if (all.success) {
+                document.getElementById('statTotal').textContent = all.data.length;
+                document.getElementById('statApproved').textContent = all.data.filter(e => e.status === 'approved').length;
+                document.getElementById('statUsers').textContent = '5';
+                renderTable(all.data);
+            }
+        }
+
+        function renderPending(events) {
+            const el = document.getElementById('pendingList');
+            if (!events.length) { el.innerHTML = '<div class="empty-state" style="padding: 2rem;"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 48px; height: 48px; color: var(--green-500);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><h3>All caught up!</h3></div>'; return; }
+            el.innerHTML = events.map(e => `<div class="pending-card"><h3 class="pending-title">${escapeHtml(e.title)}</h3><p class="pending-meta">By ${escapeHtml(e.creator_name)} • ${e.event_date}</p><div class="pending-actions"><button class="btn btn-success btn-sm" onclick="adminAction(${e.id}, 'approve')">Approve</button><button class="btn btn-danger btn-sm" onclick="adminAction(${e.id}, 'reject')">Reject</button></div></div>`).join('');
+        }
+
+        function renderTable(events) {
+            const el = document.getElementById('eventsTableBody');
+            if (!events.length) { el.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No events</td></tr>'; return; }
+            el.innerHTML = events.map(e => `<tr><td><strong>${escapeHtml(e.title)}</strong><br><small style="color: var(--slate-400);">by ${escapeHtml(e.creator_name)}</small></td><td><span class="card-category ${e.category.toLowerCase()}" style="position:static;">${e.category}</span></td><td>${e.event_date}</td><td><span class="status-badge ${e.status}">${e.status}</span></td><td style="text-align: right;"><a href="event_details.html?id=${e.id}" style="color: var(--primary); margin-right: 0.75rem;">View</a><button onclick="adminAction(${e.id}, 'delete')" style="color: var(--red-500); background:none; border:none; cursor:pointer;">Delete</button></td></tr>`).join('');
+        }
+
+        async function adminAction(id, action) {
+            if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} this event?`)) return;
+            const result = await fetch(`${API_BASE}/admin.php`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event_id: id, action }) }).then(r => r.json());
+            if (result.success) { document.getElementById('successMessage').textContent = `Event ${action}d`; document.getElementById('successAlert').classList.remove('hidden'); setTimeout(() => document.getElementById('successAlert').classList.add('hidden'), 2000); loadData(); }
+        }
+
+        document.getElementById('logoutBtn')?.addEventListener('click', (e) => { e.preventDefault(); logout(); });
+    </script>
+</body>
+
+</html>

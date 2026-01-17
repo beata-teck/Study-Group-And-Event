@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Calendar - StudyFinder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .calendar-legend {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1rem 1.5rem;
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1.5rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--slate-600);
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.study {
+            background: var(--blue-500);
+        }
+
+        .legend-dot.social {
+            background: var(--pink-500);
+        }
+
+        .legend-dot.workshop {
+            background: var(--amber-500);
+        }
+
+        .calendar-container {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: var(--shadow-xl);
+            padding: 1.5rem;
+        }
+
+        .fc {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .fc-toolbar-title {
+            font-size: 1.25rem !important;
+            font-weight: 600 !important;
+        }
+
+        .fc-button-primary {
+            background-color: var(--primary) !important;
+            border-color: var(--primary) !important;
+        }
+
+        .fc-button-primary:hover {
+            background-color: var(--primary-dark) !important;
+        }
+
+        .fc-event {
+            cursor: pointer;
+            font-size: 0.75rem;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        .fc-daygrid-day.fc-day-today {
+            background-color: #f0f9ff !important;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container navbar-inner">
+            <a href="index.html" class="logo">
+                <div class="logo-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                        </path>
+                    </svg></div>
+                <span class="logo-text">StudyFinder</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Discover</a>
+                <a href="create_event.html" class="nav-link">Create Event</a>
+                <a href="calendar.html" class="nav-link active">My Calendar</a>
+            </div>
+            <div class="nav-actions">
+                <div class="nav-user" id="loggedInMenu">
+                    <span>Hello, <strong id="userName">User</strong></span>
+                    <a href="#" class="nav-link" id="logoutBtn" style="color: var(--red-500);">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-8">
+        <div class="mb-8">
+            <h1 style="font-size: 1.875rem; font-weight: 700; color: var(--slate-900); margin-bottom: 0.5rem;">My
+                Calendar</h1>
+            <p style="color: var(--slate-500);">View all your joined events in one place.</p>
+        </div>
+
+        <div class="calendar-legend">
+            <span style="font-size: 0.875rem; font-weight: 500; color: var(--slate-700);">Categories:</span>
+            <div class="legend-item"><span class="legend-dot study"></span><span>Study Groups</span></div>
+            <div class="legend-item"><span class="legend-dot social"></span><span>Social Events</span></div>
+            <div class="legend-item"><span class="legend-dot workshop"></span><span>Workshops</span></div>
+        </div>
+
+        <div class="calendar-container">
+            <div id="calendar"></div>
+        </div>
+
+        <div class="empty-state hidden" id="emptyState">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+            <h3>No events joined yet</h3>
+            <p>Join some events to see them on your calendar!</p>
+            <a href="index.html" class="btn btn-primary mt-4">Discover Events</a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom" style="border:none;margin:0;padding:0;">
+                <p>&copy; 2026 StudyFinder</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            if (!currentUser) { window.location.href = 'login.html'; return; }
+
+            const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+                initialView: 'dayGridMonth',
+                headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listWeek' },
+                events: '../backend/api/get_calendar_events.php',
+                eventClick: (info) => { if (info.event.url) { info.jsEvent.preventDefault(); window.location.href = info.event.url; } },
+                loading: (isLoading) => { if (!isLoading && calendar.getEvents().length === 0) document.getElementById('emptyState').classList.remove('hidden'); },
+                height: 'auto', aspectRatio: 1.8, dayMaxEvents: 3
+            });
+            calendar.render();
+        });
+        document.getElementById('logoutBtn')?.addEventListener('click', (e) => { e.preventDefault(); logout(); });
+    </script>
+</body>
+
+</html>
