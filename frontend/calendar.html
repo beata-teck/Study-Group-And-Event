@@ -160,9 +160,20 @@
             const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
                 initialView: 'dayGridMonth',
                 headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listWeek' },
-                events: '../backend/api/get_calendar_events.php',
+                events: function (info, successCallback, failureCallback) {
+                    if (!currentUser) return;
+                    fetch(`${API_BASE}/get_calendar_events.php`, {
+                        headers: { 'x-user-id': currentUser.id }
+                    })
+                        .then(response => response.json())
+                        .then(data => successCallback(data))
+                        .catch(error => {
+                            console.error('Error fetching calendar events:', error);
+                            failureCallback(error);
+                        });
+                },
                 eventClick: (info) => { if (info.event.url) { info.jsEvent.preventDefault(); window.location.href = info.event.url; } },
-                loading: (isLoading) => { if (!isLoading && calendar.getEvents().length === 0) document.getElementById('emptyState').classList.remove('hidden'); },
+                loading: (isLoading) => { if (!isLoading && calendar.getEvents().length === 0) document.getElementById('emptyState').classList.remove('hidden'); else document.getElementById('emptyState').classList.add('hidden'); },
                 height: 'auto', aspectRatio: 1.8, dayMaxEvents: 3
             });
             calendar.render();

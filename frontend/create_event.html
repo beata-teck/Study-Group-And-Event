@@ -194,10 +194,48 @@
 
     <script src="js/app.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        const eventId = new URLSearchParams(window.location.search).get('id');
+
+        document.addEventListener('DOMContentLoaded', async () => {
             checkAuth();
             if (!currentUser) { window.location.href = 'login.html'; return; }
             document.getElementById('event_date').min = new Date().toISOString().split('T')[0];
+
+            if (eventId) {
+                // Edit Mode
+                document.querySelector('h1').textContent = 'Edit Event';
+                document.querySelector('p').textContent = 'Update event details.';
+                document.querySelector('button[type="submit"]').textContent = 'Update Event';
+
+                // Hide image upload for now (MVP limitation or implementing separate image update later)
+                // Actually, let's keep it visible but maybe disabled or warn?
+                // For now, hide it to match PUT logic (text only).
+                document.querySelector('.upload-area').parentElement.style.display = 'none';
+
+                // Fetch data
+                try {
+                    const response = await fetch(`${API_BASE}/events.php?id=${eventId}`);
+                    const data = await response.json();
+                    if (data.success && data.data) {
+                        const evt = data.data;
+                        if (evt.created_by != currentUser.id && currentUser.role !== 'admin') {
+                            alert('Unauthorized');
+                            window.location.href = 'index.html';
+                            return;
+                        }
+
+                        document.getElementById('title').value = evt.title;
+                        // Select radio
+                        const radio = document.querySelector(`input[name="category"][value="${evt.category}"]`);
+                        if (radio) radio.checked = true;
+
+                        document.getElementById('description').value = evt.description;
+                        document.getElementById('event_date').value = evt.event_date;
+                        document.getElementById('event_time').value = evt.event_time;
+                        document.getElementById('location').value = evt.location;
+                    }
+                } catch (e) { console.error(e); }
+            }
         });
 
         document.getElementById('image').addEventListener('change', (e) => {
@@ -209,31 +247,67 @@
             document.getElementById('errorAlert').classList.add('hidden');
             document.getElementById('successAlert').classList.add('hidden');
 
-            const formData = new FormData();
-            formData.append('title', document.getElementById('title').value);
-            formData.append('category', document.querySelector('input[name="category"]:checked').value);
-            formData.append('description', document.getElementById('description').value);
-            formData.append('event_date', document.getElementById('event_date').value);
-            formData.append('event_time', document.getElementById('event_time').value);
-            formData.append('location', document.getElementById('location').value);
+            if (eventId) {
+                // UPDATE (PUT)
+                const payload = {
+                    id: eventId,
+                    title: document.getElementById('title').value,
+                    category: document.querySelector('input[name="category"]:checked').value,
+                    description: document.getElementById('description').value,
+                    event_date: document.getElementById('event_date').value,
+                    event_time: document.getElementById('event_time').value,
+                    location: document.getElementById('location').value
+                };
 
-            const imageFile = document.getElementById('image').files[0];
-            if (imageFile) formData.append('image', imageFile);
-
-            try {
-                const response = await fetch(`${API_BASE}/events.php`, { method: 'POST', headers: { 'X-User-ID': currentUser.id }, body: formData });
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('successAlert').classList.remove('hidden');
-                    document.getElementById('createForm').reset();
-                    document.getElementById('uploadText').textContent = 'Click to upload';
-                } else {
-                    document.getElementById('errorMessage').textContent = data.message || 'Failed';
+                try {
+                    const response = await fetch(`${API_BASE}/events.php`, {
+                        method: 'PUT',
+                        headers: {
+                            'X-User-ID': currentUser.id,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        document.getElementById('successAlert').innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span>Event updated successfully!</span>';
+                        document.getElementById('successAlert').classList.remove('hidden');
+                        setTimeout(() => window.location.href = `event_details.html?id=${eventId}`, 1500);
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    document.getElementById('errorMessage').textContent = error.message || 'Failed to update';
                     document.getElementById('errorAlert').classList.remove('hidden');
                 }
-            } catch (error) {
-                document.getElementById('errorMessage').textContent = 'Network error';
-                document.getElementById('errorAlert').classList.remove('hidden');
+            } else {
+                // CREATE (POST)
+                const formData = new FormData();
+                formData.append('title', document.getElementById('title').value);
+                formData.append('category', document.querySelector('input[name="category"]:checked').value);
+                formData.append('description', document.getElementById('description').value);
+                formData.append('event_date', document.getElementById('event_date').value);
+                formData.append('event_time', document.getElementById('event_time').value);
+                formData.append('location', document.getElementById('location').value);
+
+                const imageFile = document.getElementById('image').files[0];
+                if (imageFile) formData.append('image', imageFile);
+
+                try {
+                    const response = await fetch(`${API_BASE}/events.php`, { method: 'POST', headers: { 'X-User-ID': currentUser.id }, body: formData });
+                    const data = await response.json();
+                    if (data.success) {
+                        document.getElementById('successAlert').classList.remove('hidden');
+                        document.getElementById('createForm').reset();
+                        document.getElementById('uploadText').textContent = 'Click to upload';
+                    } else {
+                        document.getElementById('errorMessage').textContent = data.message || 'Failed';
+                        document.getElementById('errorAlert').classList.remove('hidden');
+                    }
+                } catch (error) {
+                    document.getElementById('errorMessage').textContent = 'Network error';
+                    document.getElementById('errorAlert').classList.remove('hidden');
+                }
             }
         });
 

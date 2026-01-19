@@ -6,8 +6,8 @@
 // API Base URL - Auto-detects environment
 // If running on VS Code Live Server (port 5500), point to XAMPP (localhost/study-group-and-event/backend/api)
 // Otherwise use relative path
-const API_BASE = window.location.port === '5500' 
-    ? 'http://localhost/study-group-and-event/backend/api' 
+const API_BASE = window.location.port === '5500'
+    ? 'http://localhost/study-group-and-event/backend/api'
     : '../backend/api';
 
 // ============================================
@@ -29,7 +29,50 @@ function checkAuth() {
 function updateNavForUser() {
     document.getElementById('loggedOutMenu')?.classList.add('hidden');
     document.getElementById('loggedInMenu')?.classList.remove('hidden');
-    document.getElementById('userName').textContent = currentUser.name;
+    document.getElementById('loggedOutMenu')?.classList.add('hidden');
+    document.getElementById('loggedInMenu')?.classList.remove('hidden');
+
+    // Update to include link to profile
+    const nameEl = document.getElementById('userName');
+    if (nameEl) {
+        nameEl.innerHTML = `<a href="profile.html" style="color: inherit; text-decoration: none;">${currentUser.name}</a>`;
+        // Or better, just make the parent click go to profile if we change HTML structure
+        // But app.js reuse existing structure: <span>Hello, <strong id="userName">User</strong></span>
+        // Check HTML: <div class="nav-user" id="loggedInMenu"><span>Hello, <strong id="userName">User</strong></span>...</div>
+        // My profile.html used: <a href="profile.html" class="nav-link">Hello, <strong id="userName">User</strong></a>
+        // Let's standardise dynamically or just set text content.
+        // If I update HTML to be an anchor, textContent overwrites it if I am not careful.
+        // In app.js line 32: document.getElementById('userName').textContent = currentUser.name;
+        // This targets the <strong> tag. So it is fine.
+        // But I want the whole "Hello User" or just "User" to be clickable.
+        // I will change app.js to not assume structure preventing click, but I should probably just update `updateNavForUser` 
+        // to set the HREFs if I change the HTML to anchors.
+        // In profile.html I used `a href="profile.html"`. In index.html it is likely `span`.
+        // Let's replace the innerHTML of `loggedInMenu` to be safe and consistent.
+    }
+
+    const menu = document.getElementById('loggedInMenu');
+    if (menu) {
+        // Preserving the Logout button which has id logoutBtn attached event listener?
+        // If I replace innerHTML, I lose the event listener on logoutBtn attached in init.
+        // So I should not replace innerHTML entirely if I can avoid it.
+        // Or I should re-attach listener.
+
+        // simpler: just find the username element and wrap it or if it is already wrapped in correct HTML in other pages.
+        // Actually, I should update `index.html` and others to have the link, OR update `app.js` to inject the link.
+        // Let's update `app.js` to target `userName` and if it's inside a non-link, wrap it? No that's messy.
+
+        // Best approach: Update `app.js` line 32.
+
+        const userNameEl = document.getElementById('userName');
+        if (userNameEl) {
+            userNameEl.textContent = currentUser.name;
+            // Make parent clickable if not already?
+            if (userNameEl.parentElement.tagName !== 'A') {
+                userNameEl.parentElement.innerHTML = `Hello, <a href="profile.html" style="font-weight:700; color:inherit;">${currentUser.name}</a>`;
+            }
+        }
+    }
 
     document.getElementById('navCreateEvent')?.classList.remove('hidden');
     document.getElementById('navCalendar')?.classList.remove('hidden');
@@ -322,6 +365,95 @@ function getUrlParam(param) {
 }
 
 // ============================================
+// Notifications
+// ============================================
+
+async function checkNotifications() {
+    if (!currentUser) return;
+    try {
+        const response = await fetch(`${API_BASE}/notifications.php`, {
+            headers: { 'x-user-id': currentUser.id }
+        });
+        const data = await response.json();
+        if (data.success) {
+            updateNotificationUI(data.data);
+        }
+    } catch (e) {
+        console.error('Error fetching notifications:', e);
+    }
+}
+
+function updateNotificationUI(notifications) {
+    const uniqueId = 'notifBtnContainer';
+    let container = document.getElementById(uniqueId);
+
+    if (!container) {
+        // Create bell icon if not exists
+        container = document.createElement('div');
+        container.id = uniqueId;
+        container.style.display = 'inline-block';
+        container.style.position = 'relative';
+        container.style.marginRight = '1rem';
+        container.style.cursor = 'pointer';
+
+        container.innerHTML = `
+            <svg style="width: 24px; height: 24px; color: var(--slate-600);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+            </svg>
+            <span id="notifBadge" style="position: absolute; top: -5px; right: -5px; background: var(--red-500); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none;">0</span>
+        `;
+
+        container.onclick = () => showNotificationsList(notifications);
+
+        // Insert before Hello User
+        const menu = document.getElementById('loggedInMenu');
+        if (menu) menu.prepend(container);
+    }
+
+    // Update Badge
+    const badge = document.getElementById('notifBadge');
+    if (badge) {
+        if (notifications.length > 0) {
+            badge.textContent = notifications.length;
+            badge.style.display = 'block';
+
+            // Update click handler with fresh data
+            container.onclick = () => showNotificationsList(notifications);
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+function showNotificationsList(notifications) {
+    if (notifications.length === 0) {
+        alert("No new notifications.");
+        return;
+    }
+
+    let msg = "Unread Notifications:\n\n";
+    notifications.forEach(n => {
+        msg += `- ${n.message}\n`;
+        // Mark as read in background
+        markNotificationRead(n.id);
+    });
+
+    alert(msg);
+    // Refresh to clear badge
+    setTimeout(checkNotifications, 1000);
+}
+
+async function markNotificationRead(id) {
+    try {
+        fetch(`${API_BASE}/notifications.php`, {
+            method: 'POST',
+            headers: { 'x-user-id': currentUser.id },
+            body: JSON.stringify({ id })
+        });
+    } catch (e) { }
+}
+
+// ============================================
 // Auto-init
 // ============================================
 
@@ -329,4 +461,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const page = window.location.pathname.split('/').pop() || 'index.html';
     if (page === 'index.html' || page === '') initHomePage();
     else checkAuth();
+
+    // Check notifications periodically (every 60s) and on load
+    if (currentUser) {
+        checkNotifications();
+        setInterval(checkNotifications, 60000);
+    }
 });

@@ -4,6 +4,12 @@ include_once '../config/db.php';
 
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, x-user-id");
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    exit(0);
+}
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -107,6 +113,114 @@ if ($method == 'GET') {
             echo json_encode(["success" => true, "message" => "Event created successfully"]);
         } else {
             echo json_encode(["success" => false, "message" => "Failed to create event"]);
+        }
+    } catch (Throwable $e) {
+        echo json_encode(["success" => false, "message" => $e->getMessage()]);
+    }
+} elseif ($method == 'PUT') {
+    $data = json_decode(file_get_contents("php://input"));
+    $headers = array_change_key_case(getallheaders(), CASE_LOWER);
+    $user_id = isset($headers['x-user-id']) ? $headers['x-user-id'] : null;
+
+    if (!$user_id || empty($data->id)) {
+        echo json_encode(["success" => false, "message" => "Unauthorized or Invalid Request"]);
+        exit;
+    }
+
+    try {
+        // Verify ownership
+        $stmt = $conn->prepare("SELECT created_by FROM events WHERE id = :id");
+        $stmt->bindParam(':id', $data->id);
+        $stmt->execute();
+        $event = $stmt->fetch();
+
+        if (!$event) {
+            echo json_encode(["success" => false, "message" => "Event not found"]);
+            exit;
+        }
+
+        if ($event['created_by'] != $user_id) {
+            // Check if admin
+            $stmt = $conn->prepare("SELECT role FROM users WHERE id = :uid");
+            $stmt->bindParam(':uid', $user_id);
+            $stmt->execute();
+            $user = $stmt->fetch();
+            if ($user['role'] !== 'admin') {
+                echo json_encode(["success" => false, "message" => "Unauthorized"]);
+                exit;
+            }
+        }
+
+        $query = "UPDATE events SET title = :title, category = :category, description = :description, 
+                 event_date = :event_date, event_time = :event_time, location = :location 
+                 WHERE id = :id";
+
+        $stmt = $conn->prepare($query);
+        $stmt->bindParam(':title', $data->title);
+        $stmt->bindParam(':category', $data->category);
+        $stmt->bindParam(':description', $data->description);
+        $stmt->bindParam(':event_date', $data->event_date);
+        $stmt->bindParam(':event_time', $data->event_time);
+        $stmt->bindParam(':location', $data->location);
+        $stmt->bindParam(':id', $data->id);
+
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "message" => "Event updated successfully"]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Failed to update event"]);
+        }
+    } catch (Throwable $e) {
+        echo json_encode(["success" => false, "message" => $e->getMessage()]);
+    }
+
+} elseif ($method == 'DELETE') {
+    $id = isset($_GET['id']) ? $_GET['id'] : null;
+    if (!$id) {
+        // Try parsing body if not in URL
+        $data = json_decode(file_get_contents("php://input"));
+        $id = $data->id ?? null;
+    }
+
+    $headers = array_change_key_case(getallheaders(), CASE_LOWER);
+    $user_id = isset($headers['x-user-id']) ? $headers['x-user-id'] : null;
+
+    if (!$user_id || !$id) {
+        echo json_encode(["success" => false, "message" => "Unauthorized or Invalid Request"]);
+        exit;
+    }
+
+    try {
+        // Verify ownership
+        $stmt = $conn->prepare("SELECT created_by FROM events WHERE id = :id");
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+        $event = $stmt->fetch();
+
+        if (!$event) {
+            echo json_encode(["success" => false, "message" => "Event not found"]);
+            exit;
+        }
+
+        if ($event['created_by'] != $user_id) {
+            // Check if admin
+            $stmt = $conn->prepare("SELECT role FROM users WHERE id = :uid");
+            $stmt->bindParam(':uid', $user_id);
+            $stmt->execute();
+            $user = $stmt->fetch();
+            if ($user['role'] !== 'admin') {
+                echo json_encode(["success" => false, "message" => "Unauthorized"]);
+                exit;
+            }
+        }
+
+        $query = "DELETE FROM events WHERE id = :id";
+        $stmt = $conn->prepare($query);
+        $stmt->bindParam(':id', $id);
+
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "message" => "Event deleted successfully"]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Failed to delete event"]);
         }
     } catch (Throwable $e) {
         echo json_encode(["success" => false, "message" => $e->getMessage()]);
