@@ -64,12 +64,3 @@ CREATE TABLE IF NOT EXISTS event_comments (
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
--- Update Users Table (Manual ALTER usually needed for existing DBs, this is for fresh install)
--- ALTER TABLE users ADD COLUMN year_of_study INT;
--- ALTER TABLE users ADD COLUMN bio TEXT;
--- ALTER TABLE users ADD COLUMN interests TEXT;
--- ALTER TABLE users ADD COLUMN avatar_path VARCHAR(255);
-
--- Seed Admin User (password: admin123)
--- INSERT INTO users (name, email, password, role) VALUES ('Admin', 'admin@study.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');

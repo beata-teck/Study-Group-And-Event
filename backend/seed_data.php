@@ -22,8 +22,10 @@ try {
         echo "Using existing user ID: $userId\n";
     }
 
-    // 2. Clear existing sample events (optional, maybe just add?) 
-    // Let's just add for now to avoid deleting user data if they have any.
+    // 2. Clear existing sample events to prevent duplicates
+    $clearStmt = $conn->prepare("DELETE FROM events WHERE created_by = ?");
+    $clearStmt->execute([$userId]);
+    echo "Cleared old events for user ID: $userId\n";
 
     // 3. Define Events
     $events = [
@@ -70,11 +72,11 @@ try {
             'date' => date('Y-m-d', strtotime('+4 days')),
             'time' => '15:00:00',
             'location' => 'Robotics Lab (Block 4)',
-            'image' => 'robotics.jpg'
+            'image' => 'robotics.png'
         ]
     ];
 
-    $stmt = $conn->prepare("INSERT INTO events (title, category, description, event_date, event_time, location, created_by, status) VALUES (:title, :category, :desc, :date, :time, :loc, :uid, 'approved')");
+    $stmt = $conn->prepare("INSERT INTO events (title, category, description, event_date, event_time, location, image_path, created_by, status) VALUES (:title, :category, :desc, :date, :time, :loc, :img, :uid, 'approved')");
 
     foreach ($events as $evt) {
         $stmt->execute([
@@ -84,6 +86,7 @@ try {
             ':date' => $evt['date'],
             ':time' => $evt['time'],
             ':loc' => $evt['location'],
+            ':img' => $evt['image'],
             ':uid' => $userId
         ]);
         echo "Created event: {$evt['title']}\n";

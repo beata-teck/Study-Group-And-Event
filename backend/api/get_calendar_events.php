@@ -4,7 +4,12 @@ include_once '../config/db.php';
 
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: x-user-id");
+header("Access-Control-Allow-Methods: GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, x-user-id");
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    exit(0);
+}
 
 // Get User ID from header
 $headers = array_change_key_case(getallheaders(), CASE_LOWER);
@@ -73,11 +78,11 @@ try {
 function getCategoryColor($category)
 {
     if (stripos($category, 'study') !== false)
-        return '#3B82F6'; // blue-500
+        return '#3B82F6';
     if (stripos($category, 'social') !== false)
-        return '#EC4899'; // pink-500
+        return '#EC4899';
     if (stripos($category, 'workshop') !== false)
-        return '#F59E0B'; // amber-500
-    return '#64748B'; // slate-500
+        return '#F59E0B';
+    return '#64748B';
 }
 ?>

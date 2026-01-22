@@ -4,7 +4,12 @@ include_once '../config/db.php';
 
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, x-user-id");
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    exit(0);
+}
 
 // Get User ID from header
 $headers = array_change_key_case(getallheaders(), CASE_LOWER);
@@ -19,11 +24,6 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 try {
     if ($method == 'GET') {
-        // 1. Lazy Generation: Check for upcoming events (next 24 hours) that haven't been notified
-        // Find events user joined, starting within 24h, where no notification exists for this user + event combo
-        // Note: notifications table structure is (id, user_id, message, is_read, ...). 
-        // We don't have event_id in notifications table. We can store it in message or just logic check.
-        // To avoid duplicates without an event_id column, we can check if message contains "Reminder: [Event Title]".
 
         $upcomingQuery = "
             SELECT e.id, e.title, e.event_date, e.event_time 

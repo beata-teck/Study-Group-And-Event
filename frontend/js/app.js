@@ -1,18 +1,7 @@
-/**
- * Study Group & Event Finder - Main JavaScript
- * Handles API calls, authentication, and UI interactions
- */
 
-// API Base URL - Auto-detects environment
-// If running on VS Code Live Server (port 5500), point to XAMPP (localhost/study-group-and-event/backend/api)
-// Otherwise use relative path
 const API_BASE = window.location.port === '5500'
     ? 'http://localhost/study-group-and-event/backend/api'
     : '../backend/api';
-
-// ============================================
-// Authentication State
-// ============================================
 
 let currentUser = null;
 
@@ -32,37 +21,13 @@ function updateNavForUser() {
     document.getElementById('loggedOutMenu')?.classList.add('hidden');
     document.getElementById('loggedInMenu')?.classList.remove('hidden');
 
-    // Update to include link to profile
     const nameEl = document.getElementById('userName');
     if (nameEl) {
         nameEl.innerHTML = `<a href="profile.html" style="color: inherit; text-decoration: none;">${currentUser.name}</a>`;
-        // Or better, just make the parent click go to profile if we change HTML structure
-        // But app.js reuse existing structure: <span>Hello, <strong id="userName">User</strong></span>
-        // Check HTML: <div class="nav-user" id="loggedInMenu"><span>Hello, <strong id="userName">User</strong></span>...</div>
-        // My profile.html used: <a href="profile.html" class="nav-link">Hello, <strong id="userName">User</strong></a>
-        // Let's standardise dynamically or just set text content.
-        // If I update HTML to be an anchor, textContent overwrites it if I am not careful.
-        // In app.js line 32: document.getElementById('userName').textContent = currentUser.name;
-        // This targets the <strong> tag. So it is fine.
-        // But I want the whole "Hello User" or just "User" to be clickable.
-        // I will change app.js to not assume structure preventing click, but I should probably just update `updateNavForUser` 
-        // to set the HREFs if I change the HTML to anchors.
-        // In profile.html I used `a href="profile.html"`. In index.html it is likely `span`.
-        // Let's replace the innerHTML of `loggedInMenu` to be safe and consistent.
     }
 
     const menu = document.getElementById('loggedInMenu');
     if (menu) {
-        // Preserving the Logout button which has id logoutBtn attached event listener?
-        // If I replace innerHTML, I lose the event listener on logoutBtn attached in init.
-        // So I should not replace innerHTML entirely if I can avoid it.
-        // Or I should re-attach listener.
-
-        // simpler: just find the username element and wrap it or if it is already wrapped in correct HTML in other pages.
-        // Actually, I should update `index.html` and others to have the link, OR update `app.js` to inject the link.
-        // Let's update `app.js` to target `userName` and if it's inside a non-link, wrap it? No that's messy.
-
-        // Best approach: Update `app.js` line 32.
 
         const userNameEl = document.getElementById('userName');
         if (userNameEl) {
@@ -268,10 +233,8 @@ function renderEvents(container, events) {
     }
     events.forEach(event => el.appendChild(createEventCard(event)));
 }
-
-// ============================================
 // Page Initialization
-// ============================================
+
 
 async function initHomePage() {
     checkAuth();
@@ -338,9 +301,8 @@ async function filterByCategory(category) {
     }
 }
 
-// ============================================
 // Mobile Menu & Logout
-// ============================================
+
 
 document.getElementById('mobileMenuBtn')?.addEventListener('click', () => {
     document.getElementById('mobileMenu')?.classList.toggle('active');
@@ -452,10 +414,8 @@ async function markNotificationRead(id) {
         });
     } catch (e) { }
 }
-
-// ============================================
 // Auto-init
-// ============================================
+
 
 document.addEventListener('DOMContentLoaded', () => {
     const page = window.location.pathname.split('/').pop() || 'index.html';

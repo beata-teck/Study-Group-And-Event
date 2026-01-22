@@ -66,7 +66,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <form method="POST">
         <label>User Email:</label>
-        <input type="email" name="email" placeholder="e.g. your.email@example.com" required>
+        <input type="email" name="email" placeholder=" your.email@example.com" required>
         <button type="submit">Make Admin</button>
     </form>
 
