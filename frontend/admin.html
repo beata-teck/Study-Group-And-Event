@@ -163,11 +163,7 @@
             <p style="color: var(--slate-500);">Manage events and review pending submissions.</p>
         </div>
 
-        <div class="alert alert-success hidden" id="successAlert"><svg fill="none" stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg><span id="successMessage">Done!</span></div>
+
 
         <div class="stats-grid">
             <div class="stat-card">
@@ -274,9 +270,24 @@
         }
 
         async function adminAction(id, action) {
-            if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} this event?`)) return;
-            const result = await fetch(`${API_BASE}/admin.php`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event_id: id, action }) }).then(r => r.json());
-            if (result.success) { document.getElementById('successMessage').textContent = `Event ${action}d`; document.getElementById('successAlert').classList.remove('hidden'); setTimeout(() => document.getElementById('successAlert').classList.add('hidden'), 2000); loadData(); }
+
+            try {
+                const response = await fetch(`${API_BASE}/admin.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ event_id: id, action })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(`Event ${action}d successfully!`, 'success');
+                    loadData();
+                } else {
+                    showToast(result.message || 'Action failed', 'error');
+                }
+            } catch (e) {
+                showToast('Network error', 'error');
+            }
         }
 
         document.getElementById('logoutBtn')?.addEventListener('click', (e) => { e.preventDefault(); logout(); });

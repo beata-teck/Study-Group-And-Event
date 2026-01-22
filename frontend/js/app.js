@@ -327,6 +327,49 @@ function getUrlParam(param) {
 }
 
 // ============================================
+// Toast Notifications
+// ============================================
+
+function showToast(message, type = 'success') {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+
+    // Icons based on type
+    let icon = '';
+    if (type === 'success') {
+        icon = `<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:24px;height:24px;color:var(--green-500)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+    } else if (type === 'error') {
+        icon = `<svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:24px;height:24px;color:var(--red-500)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+    }
+
+    toast.innerHTML = `
+        ${icon}
+        <div class="toast-content">
+            <h4 class="toast-title">${type.charAt(0).toUpperCase() + type.slice(1)}</h4>
+            <p class="toast-message">${escapeHtml(message)}</p>
+        </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Auto remove
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s forwards';
+        toast.addEventListener('animationend', () => {
+            toast.remove();
+            if (container.children.length === 0) container.remove();
+        });
+    }, 4000);
+}
+
+// ============================================
 // Notifications
 // ============================================
 
@@ -365,11 +408,23 @@ function updateNotificationUI(notifications) {
             <span id="notifBadge" style="position: absolute; top: -5px; right: -5px; background: var(--red-500); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none;">0</span>
         `;
 
-        container.onclick = () => showNotificationsList(notifications);
+
+        container.onclick = (e) => {
+            e.stopPropagation();
+            showNotificationsList(notifications);
+        };
 
         // Insert before Hello User
         const menu = document.getElementById('loggedInMenu');
         if (menu) menu.prepend(container);
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const dropdown = document.querySelector('.notification-dropdown');
+            if (dropdown && !container.contains(e.target)) {
+                dropdown.remove();
+            }
+        });
     }
 
     // Update Badge
@@ -380,29 +435,96 @@ function updateNotificationUI(notifications) {
             badge.style.display = 'block';
 
             // Update click handler with fresh data
-            container.onclick = () => showNotificationsList(notifications);
+            container.onclick = (e) => {
+                e.stopPropagation();
+                showNotificationsList(notifications);
+            };
         } else {
             badge.style.display = 'none';
+            container.onclick = (e) => {
+                e.stopPropagation();
+                showNotificationsList([]);
+            };
         }
     }
 }
 
 function showNotificationsList(notifications) {
-    if (notifications.length === 0) {
-        alert("No new notifications.");
+    const container = document.getElementById('notifBtnContainer');
+    const existingDropdown = container.querySelector('.notification-dropdown');
+
+    if (existingDropdown) {
+        existingDropdown.remove();
         return;
     }
 
-    let msg = "Unread Notifications:\n\n";
-    notifications.forEach(n => {
-        msg += `- ${n.message}\n`;
-        // Mark as read in background
-        markNotificationRead(n.id);
-    });
+    const dropdown = document.createElement('div');
+    dropdown.className = 'notification-dropdown';
 
-    alert(msg);
-    // Refresh to clear badge
-    setTimeout(checkNotifications, 1000);
+    // Header
+    const header = document.createElement('div');
+    header.className = 'notification-header';
+    header.innerHTML = `<span>Notifications</span>`;
+    if (notifications.length > 0) {
+        const clearBtn = document.createElement('button');
+        clearBtn.innerText = 'Mark all read';
+        clearBtn.className = 'text-xs text-primary hover:text-primary-dark font-medium';
+        clearBtn.onclick = async (e) => {
+            e.stopPropagation();
+            for (const n of notifications) {
+                await markNotificationRead(n.id);
+            }
+            dropdown.remove();
+            checkNotifications();
+        };
+        header.appendChild(clearBtn);
+    }
+    dropdown.appendChild(header);
+
+    // List
+    const list = document.createElement('div');
+    list.className = 'notification-list';
+
+    if (notifications.length === 0) {
+        list.innerHTML = `<div class="notification-empty">No new notifications</div>`;
+    } else {
+        notifications.forEach(n => {
+            const item = document.createElement('div');
+            item.className = 'notification-item unread';
+            item.innerHTML = `
+                <p class="font-medium text-slate-800 mb-1">${escapeHtml(n.title || 'Notification')}</p>
+                <p>${escapeHtml(n.message)}</p>
+                <span class="text-xs text-slate-400 mt-2 block">${new Date(n.created_at || Date.now()).toLocaleString()}</span>
+            `;
+            // Mark as read immediately when viewed? Or keep as is? 
+            // The previous logic marked as read when the ALERT was shown. 
+            // Let's mark as read when the user "sees" them in the dropdown, 
+            // OR we can make it so they have to click 'Mark all read'.
+            // For now, let's keep the user experience seamless: 
+            // mark them as read when the dropdown opens, but maybe don't remove them immediately from UI?
+            // Actually, usually "unread" badge disappears.
+
+            // Let's just create the item. We will NOT automatically mark as read just by opening, 
+            // unless requested. But the prompt said "remove alert", and usually that means "better UI".
+            // The previous code:
+            // notifications.forEach(n => { msg += ...; markNotificationRead(n.id); });
+            // It marked ALL displayed notifications as read.
+            // Let's replicate this behavior: mark all as read when dropdown opens.
+
+            markNotificationRead(n.id);
+
+            list.appendChild(item);
+        });
+
+        // Refresh badge after a short delay so it doesn't disappear immediately while looking at it?
+        // Or just let it clear on next poll. 
+        // Let's manually clear badge now.
+        const badge = document.getElementById('notifBadge');
+        if (badge) badge.style.display = 'none';
+    }
+
+    dropdown.appendChild(list);
+    container.appendChild(dropdown);
 }
 
 async function markNotificationRead(id) {
